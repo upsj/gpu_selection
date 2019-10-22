@@ -6,4 +6,44 @@ More details can be found in
 doi: 10.1109/IPDPSW.2019.00088
 * ...
 
-It uses Catch2 as a test framework and the CUB library as a reference implementation for sorting
+It uses Catch2 as a test framework and the CUB library as a reference implementation for sorting.
+
+Structure of the project
+
+include/cpu_reference.hpp     - Reference implementations for testing
+include/verification.hpp      - Validation functions for testing
+include/cuda_definitions.cuh  - Type definitions and hardware limits
+include/cuda_error.cuh        - Wrapper for CUDA error handling
+include/cuda_memory.cuh       - Wrapper for CUDA memory allocations
+include/cuda_timer.cuh        - Wrapper for CUDA timing measurements
+include/kernel_config.cuh     - Configuration struct for kernel templates
+include/launcher_fwd.cuh      - Forward-declarations of launcher and kernel templates
+
+lib/generated/*               - Explicit template instantiations to parallelize compilation
+lib/cpu_reference.cpp         - Reference implementations for testing
+lib/verification.cpp          - Validation functions for testing
+lib/qs_launchers.cuh          - Wrappers for quickselect kernels
+lib/qs_recursion.cuh          - Kernels for quickselect single-selection
+lib/qs_recursion_multi.cuh    - Kernels for quickselect multi-selection
+lib/qs_reduce.cuh             - Kernels for reducing quickselect partial sums
+lib/qs_scan.cuh               - Kernels for quickselect bipartitioning
+lib/ssss_build_searchtree.cuh - Kernels for sampleselect sampling
+lib/ssss_collect.cuh          - Kernels for sampleselect single-selection filtering
+lib/ssss_collect_multi.cuh    - Kernels for sampleselect multi-selection filtering
+lib/ssss_count.cuh            - Kernels for sampleselect counting
+lib/ssss_launchers.cuh        - Wrappers for sampleselect kernels
+lib/ssss_merged.cuh           - Kernels for multiple simultaneous sampleselects
+lib/ssss_merged_memory.cuh    - Auxiliary data structure for sampleselect multi-selection
+lib/ssss_recursion.cuh        - Kernels for sampleselect single-selection
+lib/ssss_recursion_multi.cuh  - Kernels for sampleselect multi-selection
+lib/ssss_reduce.cuh           - Kernels for reducing sampleselect partial sums
+lib/utils_basecase.cuh        - Kernels for recursion basecase
+lib/utils_bytestorage.cuh     - Auxiliary functions for reading/writing unaligned bytes
+lib/utils_mask.cuh            - Auxiliary functions for bitmasks
+lib/utils_prefixsum.cuh       - Auxiliary functions for tree-based partial sums
+lib/utils_sampling.cuh        - Auxiliary functions for sampling
+lib/utils_search.cuh          - Auxiliary functions for binary and warp-ary searches
+lib/utils_sort.cuh            - Auxiliary functions for bitonic sorting
+lib/utils_warpaggr.cuh        - Auxiliary functions for warp-aggregation
+lib/utils_work.cuh            - Auxiliary functions for work-distribution
+lib/utils.cuh                 - Auxiliary wrappers for basic operations
