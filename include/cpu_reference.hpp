@@ -37,7 +37,7 @@ std::vector<T> build_searchtree(const std::vector<T>& in, int sample_size, int s
 
 template <typename T>
 std::pair<std::vector<index>, std::vector<unsigned char>> ssss(const std::vector<T>& data,
-                                                               const std::vector<T>& tree, bool write = true);
+                                                               const std::vector<T>& tree, bool write);
 
 std::vector<index> grouped_reduce(const std::vector<index>& data, int searchtree_size);
 std::vector<index> grouped_prefix_sum(const std::vector<index>& data, int searchtree_size);

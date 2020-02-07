@@ -83,7 +83,7 @@ TEMPLATE_PRODUCT_TEST_CASE_METHOD(test_data, "count", "[sampleselect]",
         this->count_out.resize(Config::searchtree::width);
         this->tree.resize(Config::searchtree::size);
         auto counts = this->count_out;
-        auto ref_ssss = cpu::ssss(this->data, this->tree);
+        auto ref_ssss = cpu::ssss(this->data, this->tree, Config::algorithm::write);
         auto ref_counts = ref_ssss.first;
         REQUIRE(this->count_out == ref_counts);
     }
@@ -109,7 +109,7 @@ TEMPLATE_PRODUCT_TEST_CASE_METHOD(test_data, "count-distribute", "[sampleselect]
     this->count_out.resize(Config::searchtree::width);
     this->tree.resize(Config::searchtree::size);
     auto counts = this->count_out;
-    auto ref_ssss = cpu::ssss(this->data, this->tree);
+    auto ref_ssss = cpu::ssss(this->data, this->tree, Config::algorithm::write);
     auto ref_counts = ref_ssss.first;
     auto ref_oracles = ref_ssss.second;
     CHECK(unpack(this->oracles, this->size) == ref_oracles);
@@ -204,7 +204,7 @@ TEMPLATE_PRODUCT_TEST_CASE_METHOD(test_data, "count-distribute", "[sampleselect]
         std::vector<index> part_ranks(this->ranks.begin() + rank_ranges[bucket], this->ranks.begin() + rank_ranges[bucket + 1]);
         for (auto& rank : part_ranks) rank -= bucket_prefixsum[bucket];
         auto part_tree = cpu::build_searchtree(part_data, Config::sample::size, Config::searchtree::size);
-        auto part_ssss = cpu::ssss(part_data, part_tree);
+        auto part_ssss = cpu::ssss(part_data, part_tree, Config::algorithm::write);
         auto part_counts = part_ssss.first;
         auto rank_ranges = cpu::compute_rank_ranges(part_counts, part_ranks);
         auto bucket_mask = cpu::compute_bucket_mask(rank_ranges);
