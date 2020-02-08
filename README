@@ -8,6 +8,17 @@ doi: 10.1109/IPDPSW.2019.00088
 
 It uses Catch2 as a test framework and the CUB library as a reference implementation for sorting.
 
+The tests can be run by simply executing `app/unittests`, the benchmarks can be run by executing `app/benchmark` with one of the following parameters
+
+[full]             The full benchmark for exact single and multiple selection and the individual kernels (sample, count, reduce, filter)
+[full-multionly]   The full benchmark for multiple selection only
+[approx]           The full benchmark for approximate selection with shared-memory atomics
+[approx-g]         The full benchmark for approximate selection with global-memory atomics
+[multi]            The full benchmark for multiple selection with different numbers of ranks
+[test]             A small benchmark that only executes a single benchmark with small input size
+
+`app/benchmark-sort` contains a benchmark for the CUB radix sort implementation as a performance baseline for the multiple selection.
+
 Structure of the project
 
 include/cpu_reference.hpp     - Reference implementations for testing
