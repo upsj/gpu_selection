@@ -4,7 +4,7 @@ More details can be found in
 
 * T. Ribizel and H. Anzt, "Approximate and Exact Selection on GPUs," 2019 IEEE International Parallel and Distributed Processing Symposium Workshops (IPDPSW), Rio de Janeiro, Brazil, 2019, pp. 471-478.
 doi: 10.1109/IPDPSW.2019.00088
-* ...
+* T. Ribizel, H. Anzt, "Parallel selection on GPUs," Parallel Computing, Volume 91, 2020, doi: 10.1016/j.parco.2019.102588
 
 It uses Catch2 as a test framework and the CUB library as a reference implementation for sorting.
 
