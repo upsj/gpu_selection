@@ -17,6 +17,10 @@ The tests can be run by simply executing `app/unittests`, the benchmarks can be 
 [multi]            The full benchmark for multiple selection with different numbers of ranks
 [test]             A small benchmark that only executes a single benchmark with small input size
 
+The output of these tests is the following:
+On stdout, they print error messages in case the algorithm execution produces invalid results. For the approx tests, additionally the exact and approximate rank are being output in CSV format.
+On stderr, they print the individual timings of the kernels in CSV format for different input sizes given by the first CSV field. Runtime breakdowns are listed within parentheses ().
+
 `app/benchmark-sort` contains a benchmark for the CUB radix sort implementation as a performance baseline for the multiple selection.
 
 Structure of the project
