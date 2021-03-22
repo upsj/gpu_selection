@@ -38,7 +38,7 @@ __device__ __forceinline__ index searchtree_entry(index idx) {
 }
 
 template <typename T, typename Config>
-__device__ bool is_equality_bucket(const T* leaves, index bucket_idx) {
+__host__ __device__ bool is_equality_bucket(const T* leaves, index bucket_idx) {
     // first and last bucket can't definitely be checked to be equality buckets
     return bucket_idx > 0 && bucket_idx < Config::searchtree::width - 1 && leaves[bucket_idx + 1] == add_epsilon(leaves[bucket_idx]);
 }

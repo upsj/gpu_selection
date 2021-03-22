@@ -90,6 +90,9 @@ template <typename T, typename Config>
 void sampleselect(T* in, T* tmp, T* tree, index* count_tmp, index size, index rank, T* out);
 
 template <typename T, typename Config>
+void sampleselect_host(T* in, T* tmp, T* tree, index* count_tmp, index size, index rank, T* out);
+
+template <typename T, typename Config>
 void sampleselect_multi(T* in, T* tmp, index size, const index* ranks, index rank_count, index* tmp_storage, index* aux_storage, index* aux_atomic, T* out);
 
 template <typename T, typename Config>

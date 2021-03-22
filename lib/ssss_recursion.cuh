@@ -17,6 +17,8 @@
 #ifndef SSSS_RECURSION_CUH
 #define SSSS_RECURSION_CUH
 
+#include <vector>
+
 #include "ssss_build_searchtree.cuh"
 #include "ssss_collect.cuh"
 #include "ssss_count.cuh"
@@ -121,6 +123,62 @@ __global__ void sampleselect(T* in, T* tmp, T* tree,
 template <typename T, typename Config>
 void sampleselect(T* in, T* tmp, T* tree, index* count_tmp, index size, index rank, T* out) {
     kernels::sampleselect<T, Config><<<1, 1>>>(in, tmp, tree, count_tmp, size, rank, out);
+}
+
+template <typename T, typename Config>
+void sampleselect_host(T* in, T* tmp, T* tree, index* count_tmp, index size, index rank, T* out) {
+    std::vector<index> host_count_tmp(3 + Config::searchtree::width);
+    auto host_bucket_idx = (oracle*)host_count_tmp.data();
+    auto host_rank_out = ((index*)host_bucket_idx) + 1;
+    auto host_atomic = host_rank_out + 1;
+    auto host_totalcounts = host_atomic + 1;
+    std::vector<T> host_tree(Config::searchtree::size);
+    T host_out{};
+    auto host_leaves = host_tree.data() + Config::searchtree::width - 1;
+    do {
+        if (size <= Config::basecase::size) {
+            kernels::select_bitonic_basecase<T, Config><<<1, Config::basecase::launch_size>>>(in, size, rank, out);
+            return;
+        }
+
+        // launch kernels:
+        // sample and build searchtree
+        gpu::build_searchtree<T, Config>(in, tree, size);
+
+        // Usage of tmp storage:
+        // | bucket_idx | rank_out | atomic | totalcounts... | oracles... | localcounts... |
+        auto bucket_idx = (oracle*)count_tmp;
+        auto rank_out = ((index*)bucket_idx) + 1;
+        auto atomic = rank_out + 1;
+        auto totalcounts = atomic + 1;
+        auto oracles = (poracle*)(totalcounts + Config::searchtree::width);
+        auto localcounts = (index*)(oracles + ceil_div(size, 4));
+
+        if (!Config::algorithm::shared_memory) {
+            cudaMemset(atomic, 0, sizeof(*atomic));
+            kernels::set_zero<<<1, Config::searchtree::width>>>(totalcounts, Config::searchtree::width);
+        }
+
+        // count buckets
+        gpu::count_buckets<T, Config>(in, tree, localcounts, totalcounts, oracles, size);
+        kernels::sampleselect_findbucket<Config>
+                <<<1, Config::searchtree::width / 2>>>(totalcounts, rank, bucket_idx, rank_out);
+        gpu::collect_bucket_indirect<T, Config>(in, oracles, localcounts, tmp, size, bucket_idx,
+                                                atomic);
+        // tailcall
+        cudaMemcpy(host_count_tmp.data(), count_tmp, sizeof(index) * host_count_tmp.size(), cudaMemcpyDeviceToHost);
+        cudaMemcpy(host_tree.data(), tree, sizeof(T) * host_tree.size(), cudaMemcpyDeviceToHost);
+        
+        if (!Config::algorithm::bucket_select && kernels::is_equality_bucket<T, Config>(host_leaves, *host_bucket_idx)) {
+            host_out = host_leaves[*host_bucket_idx];
+            cudaMemcpy(out, &host_out, sizeof(T), cudaMemcpyHostToDevice);
+            return;
+        } else {
+            std::swap(in, tmp);
+            rank = *host_rank_out;
+            size = host_totalcounts[*host_bucket_idx];
+        }
+    } while(true);
 }
 
 template <typename Config>

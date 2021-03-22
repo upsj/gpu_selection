@@ -113,6 +113,20 @@ void ssss_recursive_impl(std::string name, index n, index d, basic_test_data<std
 }
 
 template <typename T, typename Config>
+void ssss_host_impl(std::string name, index n, index d, basic_test_data<std::pair<T,int>>& data, cuda_timer& timer, T ref) {
+    INFO(name);
+    timer.timed(name, num_runs, [&](auto event) {
+        data.reset();
+        event(0);
+        sampleselect_host<T, Config>(data.gpu_data, data.gpu_data_tmp, data.gpu_tree, data.gpu_count_tmp, data.size,
+                                data.rank, data.gpu_data_out);
+        event(1);
+    });
+    data.copy_from_gpu();
+    CHECK(ref == data.data_out[0]);
+}
+
+template <typename T, typename Config>
 void ssss_multi_impl(std::string name, index n, index d, basic_test_data<std::pair<T,int>>& data, cuda_timer& timer, const std::vector<T>& ref) {
     INFO(name);
     timer.timed(name, num_runs, [&](auto event) {
@@ -347,6 +361,37 @@ void ssss_recursive(std::string name, index n, index d, basic_test_data<std::pai
 }
 
 template <typename T>
+void ssss_host(std::string name, index n, index d, basic_test_data<std::pair<T,int>>& data, cuda_timer& timer, T ref) {
+    ssss_host_impl<T, select_config<10, 10, 8, true, true, true, 8, 10, 10>>(name + "-sdefault", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 8, false, true, true, 8, 10, 10>>(name + "-gdefault", n, d, data, timer, ref);
+    if (d >= n) {
+        // bucket select
+        ssss_host_impl<T, select_config<10, 10, 8, true, true, true, 8, 10, 10, true>>(name + "-sbucket", n, d, data, timer, ref);
+        ssss_host_impl<T, select_config<10, 10, 8, false, true, true, 8, 10, 10, true>>(name + "-gbucket", n, d, data, timer, ref);
+    }
+    // Different base case sizes
+    ssss_host_impl<T, select_config<9, 10, 8, true, true, true, 8, 10, 10>>(name + "-sb9", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<8, 10, 8, true, true, true, 8, 10, 10>>(name + "-sb8", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<9, 10, 8, false, true, true, 8, 10, 10>>(name + "-gb9", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<8, 10, 8, false, true, true, 8, 10, 10>>(name + "-gb8", n, d, data, timer, ref);
+    // Different searchtree sizes
+    ssss_host_impl<T, select_config<10, 10, 7, true, true, true, 8, 10, 10>>(name + "-st7", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 6, true, true, true, 8, 10, 10>>(name + "-st6", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 7, false, true, true, 8, 10, 10>>(name + "-gt7", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 6, false, true, true, 8, 10, 10>>(name + "-gt6", n, d, data, timer, ref);
+    // Different block sizes
+    ssss_host_impl<T, select_config<10, 10, 8, true, true, true, 8, 9, 10>>(name + "-sbl9", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 8, true, true, true, 8, 8, 10>>(name + "-sbl8", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 8, false, true, true, 8, 9, 10>>(name + "-gbl9", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 8, false, true, true, 8, 8, 10>>(name + "-gbl8", n, d, data, timer, ref);
+    // Different unrolling widths
+    ssss_host_impl<T, select_config<10, 10, 8, true, true, true, 4, 10, 10>>(name + "-su4", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 8, true, true, true, 2, 10, 10>>(name + "-su2", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 8, false, true, true, 4, 10, 10>>(name + "-gu4", n, d, data, timer, ref);
+    ssss_host_impl<T, select_config<10, 10, 8, false, true, true, 2, 10, 10>>(name + "-gu2", n, d, data, timer, ref);
+}
+
+template <typename T>
 void ssss_multi(std::string name, index n, index d, basic_test_data<std::pair<T,int>>& data, cuda_timer& timer, const std::vector<T>& ref) {
     ssss_multi_impl<T, select_config<10, 10, 8, true, true, true, 8, 10, 10>>(name + "-sdefault", n, d, data, timer, ref);
     ssss_multi_impl<T, select_config<10, 10, 8, false, true, true, 8, 10, 10>>(name + "-gdefault", n, d, data, timer, ref);
@@ -406,6 +451,7 @@ TEMPLATE_TEST_CASE("full", "[.],[full]", float, double) {
         qs_multi<T>("quickselectmulticlustered" + suffix, n, d, data, timer, refs2);
         ssss_multi<T>("sampleselectmulticlustered" + suffix, n, d, data, timer, refs2);
     }
+    ssss_host<T>("sampleselect_host" + suffix, n, d, data, timer, ref);
     ssss_recursive<T>("sampleselect" + suffix, n, d, data, timer, ref);
     ssss_partition<T>("kpartition" + suffix, n, d, data, timer);    
 }
