@@ -49,41 +49,39 @@ TEMPLATE_PRODUCT_TEST_CASE_METHOD(test_data, "basecase", "[basecase]",
     constexpr auto basecase_size = Config::basecase::size;
     constexpr auto local_size = Config::basecase::local_size;
     constexpr auto cur_launch_size = Config::basecase::launch_size;
-    for (auto size : {basecase_size, basecase_size / 5, warp_size * local_size, warp_size * local_size / 5}) {
-        for (auto launch_size: {cur_launch_size, max_block_size}) {
-            std::string mode;
-            SECTION("some ranks") {
-                mode = "some ranks";
-                ranks.resize(std::min<int>(100, size / 2));
-                for (auto i = 0; i < ranks.size(); ++i) {
-                    ranks[i] = i * size / ranks.size();
-                }
-            }
-            SECTION("all ranks") {
-                mode = "all ranks";
-                ranks.resize(size);
-                std::iota(ranks.begin(), ranks.end(), 0);
-            }
-            CAPTURE(size);
-            CAPTURE(launch_size);
-            CAPTURE(mode);
-            this->gpu_ranks.copy_from(ranks);
-            this->run([&]() { kernels::select_bitonic_basecase<T, Config><<<1, launch_size>>>(this->gpu_data, size, ranks.back(), this->gpu_data_out); });
-            std::vector<T> result;
-            this->gpu_data_out.copy_to(result);
-            auto data = this->data;
-            data.resize(size);
-            std::sort(data.begin(), data.end());
-            CHECK(data[ranks.back()] == result[0]);
-            this->run([&]() { kernels::select_bitonic_multiple_basecase<T, Config><<<1, launch_size>>>(this->gpu_data, size, this->gpu_ranks, ranks.size(), 0, this->gpu_data_out); });
-            this->gpu_data_out.copy_to(result);
-            index count{};
-            for (auto i = 0; i < ranks.size(); ++i) {
-                count += result[i] != data[ranks[i]];
-            }
-            CHECK(count == 0);
+    auto size = GENERATE(as<index>{}, basecase_size, basecase_size / 5, warp_size * local_size, warp_size * local_size / 5);
+    auto launch_size = GENERATE(as<index>{}, cur_launch_size, max_block_size);
+    std::string mode;
+    SECTION("some ranks") {
+        mode = "some ranks";
+        ranks.resize(std::min<int>(100, size / 2));
+        for (auto i = 0; i < ranks.size(); ++i) {
+            ranks[i] = i * size / ranks.size();
         }
     }
+    SECTION("all ranks") {
+        mode = "all ranks";
+        ranks.resize(size);
+        std::iota(ranks.begin(), ranks.end(), 0);
+    }
+    CAPTURE(size);
+    CAPTURE(launch_size);
+    CAPTURE(mode);
+    this->gpu_ranks.copy_from(ranks);
+    this->run([&]() { kernels::select_bitonic_basecase<T, Config><<<1, launch_size>>>(this->gpu_data, size, ranks.back(), this->gpu_data_out); });
+    std::vector<T> result;
+    this->gpu_data_out.copy_to(result);
+    auto data = this->data;
+    data.resize(size);
+    std::sort(data.begin(), data.end());
+    CHECK(data[ranks.back()] == result[0]);
+    this->run([&]() { kernels::select_bitonic_multiple_basecase<T, Config><<<1, launch_size>>>(this->gpu_data, size, this->gpu_ranks, ranks.size(), 0, this->gpu_data_out); });
+    this->gpu_data_out.copy_to(result);
+    index count{};
+    for (auto i = 0; i < ranks.size(); ++i) {
+        count += result[i] != data[ranks[i]];
+    }
+    CHECK(count == 0);
 }
 
 } // namespace gpu

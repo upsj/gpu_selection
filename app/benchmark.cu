@@ -584,6 +584,7 @@ TEMPLATE_TEST_CASE("test", "[.],[test]", float, double) {
         qs_multi<T>("quickselectmulticlustered" + suffix, n, d, data, timer, refs2);
         ssss_multi<T>("sampleselectmulticlustered" + suffix, n, d, data, timer, refs2);
     }
+    ssss_host<T>("sampleselect_host" + suffix, n, d, data, timer, ref);
     ssss_recursive<T>("sampleselect" + suffix, n, d, data, timer, ref);
     ssss_partition<T>("kpartition" + suffix, n, d, data, timer);
 }
